@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Django Server",
+			"type": "shell",
+			"command": "& \"C:/Users/TASHINGA/OneDrive/Desktop/Ralph Kashiri/WebApp/.venv/Scripts/python.exe\" manage.py runserver",
+			"isBackground": true,
+			"group": "build"
+		}
+	]
+}

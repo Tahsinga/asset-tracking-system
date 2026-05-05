@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Guard Dashboard - Device Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        header h1 {
+            font-size: 24px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-actions a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            transition: background 0.3s;
+        }
+        
+        .header-actions a:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .device-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .device-item {
+            padding: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #667eea;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .device-item strong {
+            display: block;
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .device-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .info-item {
+            margin-bottom: 8px;
+        }
+        
+        .info-item span {
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .log-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .log-item strong {
+            display: block;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .log-item small {
+            display: block;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .badge-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 40px;
+        }
+        
+        .timeline-item:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+        
+        .timeline-item:not(:last-child):after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 20px;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-content small {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        .timeline-content strong {
+            display: block;
+            color: #333;
+        }
+        
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+            float: right;
+            margin-bottom: 20px;
+        }
+        
+        .refresh-btn:hover {
+            background: #764ba2;
+        }
+        
+        .clear {
+            clear: both;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gate Guard Dashboard</h1>
+        <div class="header-actions">
+            <span>Welcome, {{ user.get_full_name|default:user.username }}!</span>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ checked_out_devices|length }}</div>
+                <div class="stat-label">Devices Currently Out</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ recent_logs|length }}</div>
+                <div class="stat-label">Recent Activity</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="time">--:--</div>
+                <div class="stat-label">Current Time</div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <!-- Currently Checked Out Devices -->
+            <div class="card">
+                <h2>Devices Currently Checked Out</h2>
+                <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+                <div class="clear"></div>
+                <div class="device-list" id="checkedOutList">
+                    {% if checked_out_devices %}
+                        {% for checkout in checked_out_devices %}
+                        <div class="device-item">
+                            <strong>{{ checkout.device_id }}</strong>
+                            <div class="device-info">
+                                <div class="info-item">
+                                    <span>User:</span>
+                                    {{ checkout.user_name }}
+                                </div>
+                                <div class="info-item">
+                                    <span>Department:</span>
+                                    {{ checkout.user_department|default:"N/A" }}
+                                </div>
+                                <div class="info-item">
+                                    <span>Contact:</span>
+                                    {{ checkout.user_contact|default:"N/A" }}
+                                </div>
+                                <div class="info-item">
+                                    <span>Purpose:</span>
+                                    {{ checkout.purpose|default:"No purpose specified" }}
+                                </div>
+                                <div class="info-item">
+                                    <span>Checked Out:</span>
+                                    {{ checkout.checkout_time|date:"M d, Y H:i" }}
+                                </div>
+                                <div class="info-item">
+                                    <span>Duration:</span>
+                                    <span id="duration-{{ checkout.id }}">--</span>
+                                </div>
+                                <span class="badge badge-active">Active</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-message">
+                            <p>No devices currently checked out</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Recent Activity Timeline -->
+            <div class="card">
+                <h2>Recent Activity Log</h2>
+                <div class="device-list status-timeline">
+                    {% if recent_logs %}
+                        {% for log in recent_logs %}
+                        <div class="timeline-item">
+                            <div class="timeline-content">
+                                <strong>{{ log.device_id }}</strong>
+                                <small>Owner: {{ log.owner_name|default:"Unknown" }}</small>
+                                <small>Serial: {{ log.serial_number|default:"N/A" }}</small>
+                                <small>Time: {{ log.timestamp|date:"M d, Y H:i:s" }}</small>
+                                {% if log.notes %}
+                                <small>Notes: {{ log.notes }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-message">
+                            <p>No recent activity</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('time').textContent = `${hours}:${minutes}`;
+        }
+        
+        // Calculate durations
+        function updateDurations() {
+            const checkoutTimes = document.querySelectorAll('[id^="duration-"]');
+            checkoutTimes.forEach(el => {
+                const checkoutId = el.id.split('-')[1];
+                const checkoutTime = new Date('{{ checkout.checkout_time|date:"Y-m-d\TH:i:s" }}');
+                // Get checkout time from HTML (this is a simplified approach)
+                // In production, you'd want this data from data attributes
+            });
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Device - Admin Panel</title>
+    <style>
+        :root {
+            --bg-1: #020617;
+            --bg-2: #0b1220;
+            --card: rgba(2, 6, 23, .75);
+            --card-light: rgba(255,255,255,.03);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #22c55e;
+            --danger: #ef4444;
+            --warn: #facc15;
+            --border: rgba(255,255,255,.08);
+            --blur: blur(12px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+        }
+        
+        body {
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at -20% -20%, #1e293b33, transparent),
+                radial-gradient(900px 500px at 120% 0%, #4ade8033, transparent),
+                linear-gradient(180deg, var(--bg-1), var(--bg-2));
+            min-height: 100vh;
+        }
+        
+        header {
+            backdrop-filter: var(--blur);
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+            color: white;
+            padding: 20px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-actions a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .header-actions a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            background: linear-gradient(145deg, var(--card-light), rgba(255,255,255,0));
+            backdrop-filter: var(--blur);
+            box-shadow: 0 16px 40px rgba(0,0,0,.35);
+        }
+        
+        .card h2 {
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+            background: rgba(255,255,255,.03);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(34,197,94,.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, var(--accent) 0%, #16a34a 100%);
+            color: #020617;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(34,197,94,.35);
+        }
+        
+        .error {
+            background-color: rgba(239,68,68,.15);
+            color: #fca5a5;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid var(--danger);
+        }
+        
+        .success {
+            background-color: rgba(34,197,94,.15);
+            color: #4ade80;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(34,197,94,.3);
+        }
+        
+        .device-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        
+        .device-row {
+            padding: 12px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1.5fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .device-row:hover {
+            background: rgba(255,255,255,.06);
+            border-color: var(--accent);
+        }
+        
+        .device-row strong {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .device-row small {
+            color: var(--muted);
+            font-size: 11px;
+        }
+        
+        .device-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(34,197,94,.2);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,.3);
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .device-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin - Register Devices</h1>
+        <div class="header-actions">
+            <span>Welcome, {{ user.get_full_name|default:user.username }}!</span>
+            <a href="{% url 'admin_approvals' %}">Approvals</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Registration Form -->
+            <div class="card">
+                <h2>Register New Device</h2>
+                
+                {% if error %}
+                <div class="error">{{ error }}</div>
+                {% endif %}
+                
+                {% if success %}
+                <div class="success">{{ success }}</div>
+                {% endif %}
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="serial_number">Serial Number *</label>
+                        <input type="text" id="serial_number" name="serial_number" required placeholder="e.g., SN123456">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="device_name">Device Name *</label>
+                        <input type="text" id="device_name" name="device_name" required placeholder="e.g., Laptop Dell">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="device_model">Device Model</label>
+                        <input type="text" id="device_model" name="device_model" placeholder="e.g., XPS 15" optional>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" placeholder="Any additional details about the device..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Register Device</button>
+                </form>
+            </div>
+            
+            <!-- Registered Devices List -->
+            <div class="card">
+                <h2>Registered Devices ({{ registered_devices|length }})</h2>
+                <div class="device-list">
+                    {% if registered_devices %}
+                        {% for device in registered_devices %}
+                        <div class="device-row">
+                            <div>
+                                <strong>{{ device.serial_number }}</strong>
+                            </div>
+                            <div>
+                                <small>{{ device.device_name }}</small>
+                                {% if device.device_model %}
+                                <br><small style="color: #9ca3af;">{{ device.device_model }}</small>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <small>Registered: {{ device.registered_date|date:"M d, Y" }}</small>
+                                <br><small style="color: #9ca3af;">By: {{ device.registered_by.username }}</small>
+                            </div>
+                            <div>
+                                <span class="status-badge">{% if device.is_active %}Active{% else %}Inactive{% endif %}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-message">
+                            <p>No devices registered yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

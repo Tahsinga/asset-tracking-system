@@ -1,0 +1,633 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gate Asset Receiver  Monitor</title>
+
+  <!-- Modern clean visual style -->
+  <style>
+    :root {
+      --bg-1: #020617;
+      --bg-2: #0b1220;
+      --card: rgba(2, 6, 23, .75);
+      --card-light: rgba(255,255,255,.03);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warn: #facc15;
+      --border: rgba(255,255,255,.08);
+      --blur: blur(12px);
+    }
+
+    * { box-sizing: border-box; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at -20% -20%, #1e293b33, transparent),
+        radial-gradient(900px 500px at 120% 0%, #4ade8033, transparent),
+        linear-gradient(180deg, var(--bg-1), var(--bg-2));
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    /*  SIDEBAR  */
+    aside {
+      backdrop-filter: var(--blur);
+      border-right: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand .name { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+    .brand .tag { font-size: 12px; color: var(--muted); }
+
+    .side-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 14px 10px;
+      background: var(--card);
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+
+    .section-title { font-weight: 600; font-size: 13px; margin-bottom: 8px; letter-spacing: .25px; }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      letter-spacing: .3px;
+    }
+    .online { background: rgba(34,197,94,.15); color: #4ade80; }
+    .offline { background: rgba(239,68,68,.15); color: #f87171; }
+    .warn { background: rgba(250,204,21,.15); color: #fde047; }
+
+    .mono { font-family: ui-monospace, Menlo, Consolas, "Courier New", monospace; }
+
+    .action-btn {
+      margin-top: 8px;
+      width: 100%;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: linear-gradient(145deg, rgba(255,255,255,.06), rgba(255,255,255,0));
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .action-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+
+
+    /*  MAIN CONTENT  */
+    main {
+      padding: 24px 26px 26px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .sidebar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .device-section {
+      flex: 1;
+      min-height: 400px;
+    }
+
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; }
+    .title { font-size: 22px; font-weight: 700; }
+    .subtitle { font-size: 13px; color: var(--muted); }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 16px;
+      background: linear-gradient(145deg, var(--card-light), rgba(255,255,255,0));
+      backdrop-filter: var(--blur);
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+
+    .table-wrap { overflow: hidden; border-radius: 16px; border: 1px solid var(--border); background: rgba(0,0,0,.18); }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: rgba(255,255,255,.05); }
+    th, td { padding: 10px 12px; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    th { color: var(--muted); font-weight: 500; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    #deviceList {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-top: 4px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .device-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      background: rgba(255,255,255,.02);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+
+    .device-card.not-checked-out {
+      border: 2px solid #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .device-card:hover {
+      background: rgba(255,255,255,.05);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      border-color: var(--accent);
+    }
+
+    .device-card.not-checked-out:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: #f87171;
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .device-id {
+      font-size: 16px;
+      font-weight: 600;
+      font-family: ui-monospace, Menlo, Consolas, "Courier New", monospace;
+      color: var(--accent);
+    }
+
+    .device-status {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: rgba(34,197,94,.15);
+      color: #4ade80;
+      font-weight: 500;
+    }
+
+    .device-details {
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-row strong {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .footer-note { text-align: center; font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    @media (max-width: 860px) { body { grid-template-columns: 1fr; } aside { border-right: none; border-bottom: 1px solid var(--border); } }
+  </style>
+</head>
+<body>
+
+  <!--  SIDEBAR  -->
+  <aside>
+    <div class="brand">
+      <div class="name">Gate Receiver Monitor</div>
+      <div class="tag">ESP32 Asset Detection System</div>
+    </div>
+
+    <section class="side-card">
+      <div class="section-title">Network Status</div>
+
+      <div class="status-row">
+        <span>Main WiFi</span>
+        <span id="staStatus" class="pill offline">Offline</span>
+      </div>
+
+      <div class="status-row">
+        <span>Access Point</span>
+        <span id="apInfo" class="pill warn"></span>
+      </div>
+
+      <div class="status-row">
+        <span>Receiver IP</span>
+        <span id="ipAddr" class="pill mono"></span>
+      </div>
+
+      <button class="action-btn" onclick="initAudio()">Enable Sound Alerts</button>
+    </section>
+
+    <section class="side-card">
+      <div class="section-title">System Activity</div>
+      <div class="status-row">
+        <span>Devices Online</span>
+        <span id="deviceCount" class="pill online">0</span>
+      </div>
+      <div class="status-row">
+        <span>Last Sync</span>
+        <span id="lastSync" class="pill mono"></span>
+      </div>
+      <a href="/checkout-history/" class="action-btn" style="display: block; text-align: center; text-decoration: none; margin-top: 8px;">View Checkout History</a>
+    </section>
+  </aside>
+
+
+  <!--  MAIN CONTENT  -->
+  <main>
+
+    <div class="page-header">
+      <div>
+        <div class="title">Live Device Checkins</div>
+        <div class="subtitle">Realtime reports from assets at the gate</div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="main-content">
+        <section class="card">
+          <div class="section-title">Recent Events</div>
+          
+          <!-- Filters -->
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label for="dateFilter" style="font-size: 12px; color: var(--muted); font-weight: 500;">Filter by Date:</label>
+              <input type="date" id="dateFilter" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.02); color: var(--text); font-size: 13px;">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label for="searchFilter" style="font-size: 12px; color: var(--muted); font-weight: 500;">Search Devices:</label>
+              <input type="text" id="searchFilter" placeholder="Device ID, Owner, Notes..." style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.02); color: var(--text); font-size: 13px; min-width: 200px;">
+            </div>
+            <div style="display: flex; align-items: end;">
+              <button id="clearFilters" class="action-btn" style="margin: 0; padding: 8px 16px; font-size: 12px;">Clear</button>
+            </div>
+          </div>
+          
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:160px">Date & Time</th>
+                  <th style="width:120px">Device ID</th>
+                  <th style="width:120px">Serial Number</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody id="logBody">
+                <tr>
+                  <td class="muted"></td>
+                  <td class="muted">Waiting</td>
+                  <td class="muted">No activity yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div class="sidebar-content">
+        <section class="card device-section">
+          <div class="section-title">Detected Device Details</div>
+          
+          <!-- Device Search -->
+          <div style="margin-bottom: 16px;">
+            <input type="text" id="deviceSearch" placeholder="Search devices..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: rgba(255,255,255,.02); color: var(--text); font-size: 13px; box-sizing: border-box;">
+          </div>
+          
+          <div id="deviceList" class="device-grid"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      ESP32 Gate Asset Monitoring System | Real-time device tracking, checkout management, and automated alerts for secure asset control.
+    </div>
+
+  </main>
+
+
+  <!--  INTERACTION + ALERTS  -->
+  <script>
+    let previousOnline = false;
+    let audioContext;
+
+    function initAudio() {
+      if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === 'suspended') audioContext.resume();
+    }
+
+    function beep(freq = 900, duration = 220) {
+      initAudio();
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.value = .28;
+      osc.connect(gain); gain.connect(audioContext.destination);
+      osc.start(); osc.stop(audioContext.currentTime + duration/1000);
+    }
+
+    function playDeviceAlert() {
+      initAudio();
+      // Play "ti ti ti ti" sound - 4 short beeps
+      const delays = [0, 150, 300, 450];
+      delays.forEach(delay => {
+        setTimeout(() => beep(1200, 120), delay);
+      });
+    }
+
+    function checkoutDevice(deviceId) {
+      const userName = prompt('Enter your name:');
+      if (!userName) return;
+      
+      const userContact = prompt('Enter your contact (optional):') || '';
+      const userDepartment = prompt('Enter your department (optional):') || '';
+      const purpose = prompt('Purpose of checkout (optional):') || '';
+      
+      fetch('/checkout/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          device_id: deviceId,
+          user_name: userName,
+          user_contact: userContact,
+          user_department: userDepartment,
+          purpose: purpose
+        })
+      }).then(r => r.json()).then(data => {
+        if (data.status === 'success') {
+          alert('Device checked out successfully!');
+          updateDevices(document.getElementById('deviceSearch').value);
+        } else {
+          alert('Error: ' + (data.message || 'Failed to check out device'));
+        }
+      });
+    }
+
+    function editDevice(device) {
+      // prompt user for new values, pre-filled
+      const newName = prompt('Device Name / Owner:', device.owner || '');
+      if (newName === null) return; // cancelled
+      const newContact = prompt('Owner Contact:', device.owner_contact || '');
+      if (newContact === null) return;
+      const newSerial = prompt('Serial Number:', device.serial || '');
+      if (newSerial === null) return;
+      const newCreated = prompt('Created Date (YYYY-MM-DD):', device.created || '');
+      if (newCreated === null) return;
+      const newNotes = prompt('Notes:', device.notes || '');
+      if (newNotes === null) return;
+
+      fetch('/update_device/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          device_id: device.id,
+          owner_name: newName,
+          owner_contact: newContact,
+          serial_number: newSerial,
+          created_date: newCreated,
+          notes: newNotes
+        })
+      }).then(r=>r.json()).then(data=>{
+        if (data.status === 'success') {
+          alert('Device details updated');
+          updateDevices(document.getElementById('deviceSearch').value);
+        } else {
+          alert('Error: '+(data.message||'Could not update'));
+        }
+      });
+    }
+
+    function checkinDevice(checkoutId) {
+      if (!confirm('Are you sure you want to check in this device?')) return;
+      
+      fetch('/checkin/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({checkout_id: checkoutId})
+      }).then(r => r.json()).then(data => {
+        if (data.status === 'success') {
+          alert('Device checked in successfully!');
+          updateDevices(document.getElementById('deviceSearch').value);
+        } else {
+          alert('Error: ' + (data.message || 'Failed to check in device'));
+        }
+      });
+    }
+
+    function setText(id, value) { document.getElementById(id).textContent = value || ''; }
+
+    function updateStatus() {
+      fetch('/status/').then(r=>r.json()).then(data => {
+        const online = data.is_online;
+        const sEl = document.getElementById('staStatus');
+
+        if (previousOnline && !online) {
+          beep(600, 500); // longer disconnect tone
+          setTimeout(() => beep(500, 500), 200); // double beep for offline
+        }
+        if (!previousOnline && online) {
+          beep(1000, 300); // connect tone
+          setTimeout(() => beep(1200, 300), 150); // ascending for online
+        }
+        previousOnline = online;
+
+        sEl.className = 'pill ' + (online ? 'online' : 'offline');
+        sEl.textContent = online ? 'Online' : 'Offline';
+
+        setText('apInfo', data.ap_ip);
+        setText('ipAddr', data.sta_ip);
+        setText('lastSync', new Date().toLocaleTimeString());
+      });
+    }
+
+    function updateLogs() {
+      const dateFilter = document.getElementById('dateFilter').value;
+      const searchFilter = document.getElementById('searchFilter').value;
+      
+      let url = '/logs/';
+      const params = new URLSearchParams();
+      if (dateFilter) params.append('date', dateFilter);
+      if (searchFilter) params.append('search', searchFilter);
+      if (params.toString()) url += '?' + params.toString();
+      
+      fetch(url).then(r=>r.json()).then(data => {
+        const body = document.getElementById('logBody');
+        body.innerHTML = '';
+
+        if (!data.logs.length) {
+          body.innerHTML = '<tr><td class="muted"></td><td class="muted">Waiting</td><td class="muted">-</td><td class="muted">No activity yet</td></tr>';
+          return;
+        }
+
+        data.logs.forEach(l => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${l.time}</td><td class='mono'>${l.device_id}</td><td class='mono'>${l.serial_number || '-'}</td><td>${l.notes}</td>`;
+          body.prepend(tr);
+        });
+      });
+    }
+
+    function updateDevices(searchTerm = '') {
+      fetch('/devices/').then(r=>r.json()).then(data => {
+        console.log('DEBUG: Device data received:', data);  // Debug output
+        const wrap = document.getElementById('deviceList');
+        const section = document.querySelector('.device-section');
+        wrap.innerHTML = '';
+        
+        // Filter devices based on search term
+        let filteredDevices = data.devices;
+        if (searchTerm) {
+          const term = searchTerm.toLowerCase();
+          filteredDevices = data.devices.filter(d => 
+            d.id.toLowerCase().includes(term) ||
+            (d.owner && d.owner.toLowerCase().includes(term)) ||
+            (d.serial && d.serial.toLowerCase().includes(term))
+          );
+        }
+        
+        setText('deviceCount', filteredDevices.length);
+
+        if (!filteredDevices.length) {
+          // Hide the device section entirely when nothing is detected
+          if (section) section.style.display = 'none';
+          return;
+        } else {
+          if (section) section.style.display = 'block';
+          // Play sound alert when devices are detected
+          playDeviceAlert();
+        }
+
+        filteredDevices.forEach(d => {
+          const c = document.createElement('div');
+          c.className = 'device-card' + (d.is_checked_out ? '' : ' not-checked-out');
+          c.innerHTML = `
+            <div class='device-header'>
+              <div class='device-id'>📱 ${d.id}</div>
+              <div class='device-status' style='${d.is_checked_out ? 'background: rgba(34,197,94,.15); color: #4ade80;' : 'background: rgba(239,68,68,.15); color: #f87171;'}'>${d.is_checked_out ? '🔒 Checked Out' : '🚨 Not Checked Out'}</div>
+            </div>
+            <div class='device-details'>
+              <div class='detail-row'><strong>Device Name:</strong> ${d.device_name || 'Unknown'}</div>
+              ${d.device_model ? `<div class='detail-row'><strong>Model:</strong> ${d.device_model}</div>` : ''}
+              <div class='detail-row'><strong>Serial:</strong> ${d.serial || 'Unknown'}</div>
+              ${d.is_checked_out ? `
+                <div class='detail-row' style='margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.1);'>
+                  <strong style='color: #4ade80;'>Checked Out Details:</strong>
+                </div>
+                <div class='detail-row'><strong>User:</strong> ${d.current_user || 'N/A'}</div>
+                <div class='detail-row'><strong>Department:</strong> ${d.current_user_department || 'N/A'}</div>
+                <div class='detail-row'><strong>Contact:</strong> ${d.current_user_contact || 'N/A'}</div>
+                ${d.purpose ? `<div class='detail-row'><strong>Purpose:</strong> ${d.purpose}</div>` : ''}
+                <div class='detail-row' style='margin-top: 8px;'>
+                  <button onclick='checkinDevice("${d.checkout_id}")' class='action-btn' style='width: 100%; margin: 0; font-size: 12px; padding: 6px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;'>Check In Device</button>
+                </div>
+              ` : `
+                <div class='detail-row' style='margin-top: 8px;'>
+                  <button onclick='editDevice(${JSON.stringify(d)})' class='action-btn' style='width: 100%; margin: 0; font-size: 12px; padding: 6px;'>Edit Details</button>
+                </div>
+              `}
+            </div>`;
+          wrap.appendChild(c);
+        });
+      });
+    }
+
+    updateStatus();
+    updateLogs();
+    updateDevices();
+    setInterval(updateStatus, 5000);
+    setInterval(updateLogs, 6000);
+    setInterval(() => {
+      const searchTerm = document.getElementById('deviceSearch').value;
+      updateDevices(searchTerm);
+    }, 7000);
+    
+    // Filter event listeners
+    document.getElementById('dateFilter').addEventListener('change', updateLogs);
+    document.getElementById('searchFilter').addEventListener('input', debounce(updateLogs, 300));
+    document.getElementById('clearFilters').addEventListener('click', function() {
+      document.getElementById('dateFilter').value = '';
+      document.getElementById('searchFilter').value = '';
+      // Clear the table
+      const body = document.getElementById('logBody');
+      body.innerHTML = '<tr><td class="muted"></td><td class="muted">Waiting</td><td class="muted">-</td><td class="muted">No activity yet</td></tr>';
+    });
+    
+    // Device search event listener
+    document.getElementById('deviceSearch').addEventListener('input', function() {
+      const searchTerm = this.value;
+      updateDevices(searchTerm);
+    });
+    
+    // Debounce function for search input
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+  </script>
+
+</body>
+</html>

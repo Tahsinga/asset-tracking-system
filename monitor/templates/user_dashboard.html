@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Device Checkout</title>
+    <style>
+        :root {
+            --bg-1: #020617;
+            --bg-2: #0b1220;
+            --card: rgba(2, 6, 23, .75);
+            --card-light: rgba(255,255,255,.03);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #22c55e;
+            --danger: #ef4444;
+            --warn: #facc15;
+            --border: rgba(255,255,255,.08);
+            --blur: blur(12px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Arial, sans-serif;
+        }
+        
+        body {
+            color: var(--text);
+            background:
+                radial-gradient(1200px 600px at -20% -20%, #1e293b33, transparent),
+                radial-gradient(900px 500px at 120% 0%, #4ade8033, transparent),
+                linear-gradient(180deg, var(--bg-1), var(--bg-2));
+            min-height: 100vh;
+        }
+        
+        header {
+            backdrop-filter: var(--blur);
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+            color: white;
+            padding: 20px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-actions a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .header-actions a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 25px;
+            background: linear-gradient(145deg, var(--card-light), rgba(255,255,255,0));
+            backdrop-filter: var(--blur);
+            box-shadow: 0 16px 40px rgba(0,0,0,.35);
+        }
+        
+        .card h2 {
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .device-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+        
+        .device-item {
+            padding: 15px;
+            background: rgba(255,255,255,.03);
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .device-item:hover {
+            background: rgba(255,255,255,.06);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .device-info {
+            flex: 1;
+        }
+        
+        .device-info strong {
+            display: block;
+            color: var(--text);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .device-info small {
+            color: var(--muted);
+            font-size: 12px;
+        }
+        
+        .device-item button {
+            background: linear-gradient(135deg, var(--accent) 0%, #16a34a 100%);
+            color: #020617;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .device-item button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34,197,94,.35);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: var(--blur);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            border: 1px solid var(--border);
+            background: linear-gradient(145deg, var(--card), rgba(255,255,255,.02));
+            backdrop-filter: var(--blur);
+            padding: 30px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.5);
+        }
+        
+        .modal-content h3 {
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-family: inherit;
+            background: rgba(255,255,255,.03);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: rgba(34,197,94,.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, var(--accent) 0%, #16a34a 100%);
+            color: #020617;
+            border: none;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(34,197,94,.35);
+        }
+        
+        .btn-cancel {
+            background: transparent;
+            color: var(--text);
+        }
+        
+        .btn-cancel:hover {
+            border-color: var(--accent);
+            background: rgba(34,197,94,.1);
+        }
+        
+        .empty-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--muted);
+        }
+        
+        .checkout-item {
+            padding: 15px;
+            background: rgba(34,197,94,.1);
+            border-left: 4px solid var(--accent);
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        
+        .checkout-item strong {
+            display: block;
+            color: var(--text);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .status-pending {
+            background: rgba(250,204,21,.2);
+            color: #fde047;
+            border: 1px solid rgba(250,204,21,.3);
+        }
+        
+        .status-approved {
+            background: rgba(34,197,94,.2);
+            color: #4ade80;
+            border: 1px solid rgba(34,197,94,.3);
+        }
+        
+        .success-message {
+            background: rgba(34,197,94,.15);
+            color: #4ade80;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(34,197,94,.3);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>User Dashboard</h1>
+        <div class="header-actions">
+            <span>Welcome, {{ user.get_full_name|default:user.username }}!</span>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard-grid">
+            <!-- Available Devices -->
+            <div class="card" data-section="available-devices">
+                <h2>Available Devices</h2>
+                <div class="device-list" id="deviceList">
+                    {% if available_devices %}
+                        {% for device in available_devices %}
+                        <div class="device-item">
+                            <div class="device-info">
+                                <strong>{{ device.device_name }}</strong>
+                                <small>Serial: {{ device.serial_number }}</small>
+                                {% if device.device_model %}<small>Model: {{ device.device_model }}</small>{% endif %}
+                            </div>
+                            <button onclick="openModal('{{ device.serial_number }}', '{{ device.device_name }}')">Request Checkout</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-message">
+                            <p>No devices available at the moment</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- My Checkouts -->
+            <div class="card" data-section="checkout-requests">
+                <h2>My Checkout Requests</h2>
+                <div id="checkoutList">
+                    <!-- Pending Approvals -->
+                    {% if pending_checkouts %}
+                        <div style="margin-bottom: 20px;">
+                            <h3 style="color: #fde047; font-size: 14px; margin-bottom: 10px;">⏳ Pending Approval</h3>
+                            {% for checkout in pending_checkouts %}
+                            <div class="checkout-item" style="background: rgba(250,204,21,.08); border-left-color: var(--warn);">
+                                <strong>{{ checkout.registered_device.device_name }}</strong>
+                                <small>Serial: {{ checkout.serial_number }}</small>
+                                <small>Purpose: {{ checkout.purpose }}</small>
+                                <br>
+                                <small>Requested: {{ checkout.checkout_time|date:"M d, Y H:i" }}</small>
+                                <span class="status-badge status-pending">⏳ Pending</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Approved Checkouts -->
+                    {% if approved_checkouts %}
+                        <div>
+                            <h3 style="color: #4ade80; font-size: 14px; margin-bottom: 10px;">✓ Confirmed Checkout</h3>
+                            {% for checkout in approved_checkouts %}
+                            <div class="checkout-item" style="background: rgba(34,197,94,.08); border-left-color: var(--accent);">
+                                <strong>{{ checkout.registered_device.device_name }}</strong>
+                                <small>Serial: {{ checkout.serial_number }}</small>
+                                <small>Purpose: {{ checkout.purpose }}</small>
+                                <br>
+                                <small>Approved: {{ checkout.approval_date|date:"M d, Y H:i" }}</small>
+                                <br>
+                                <small style="color: var(--accent);">By: {{ checkout.approved_by.get_full_name|default:checkout.approved_by.username }}</small>
+                                <span class="status-badge status-approved">✓ Confirmed</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if not pending_checkouts and not approved_checkouts %}
+                        <div class="empty-message">
+                            <p>No checkout requests yet</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Checkout Request Modal -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <h3>Request Device Checkout</h3>
+            <div id="successMessage" class="success-message" style="display: none;">
+                Checkout request submitted successfully!
+            </div>
+            <form id="checkoutForm">
+                {% csrf_token %}
+                <input type="hidden" id="deviceId" name="device_id">
+                
+                <div class="form-group">
+                    <label>Device ID</label>
+                    <input type="text" id="displayDeviceId" disabled>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user">User Name *</label>
+                    <input type="text" id="user" name="user" placeholder="Enter your full name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="department">Department *</label>
+                    <input type="text" id="department" name="department" placeholder="Enter your department" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact">Contact *</label>
+                    <input type="text" id="contact" name="contact" placeholder="Enter your contact (email or phone)" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="purpose">Purpose of Checkout *</label>
+                    <textarea id="purpose" name="purpose" placeholder="Describe the reason for checkout..." required></textarea>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-submit">Submit Request</button>
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        function openModal(serialNumber, deviceName) {
+            document.getElementById('deviceId').value = serialNumber;
+            document.getElementById('displayDeviceId').value = deviceName + ' (' + serialNumber + ')';
+            document.getElementById('checkoutModal').classList.add('active');
+            document.getElementById('user').value = '';
+            document.getElementById('department').value = '';
+            document.getElementById('contact').value = '';
+            document.getElementById('purpose').value = '';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        function closeModal() {
+            document.getElementById('checkoutModal').classList.remove('active');
+        }
+        
+        document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const serialNumber = document.getElementById('deviceId').value;
+            const user = document.getElementById('user').value;
+            const department = document.getElementById('department').value;
+            const contact = document.getElementById('contact').value;
+            const purpose = document.getElementById('purpose').value;
+            
+            try {
+                const response = await fetch('{% url "request_checkout" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({
+                        serial_number: serialNumber,
+                        user: user,
+                        department: department,
+                        contact: contact,
+                        purpose: purpose
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('successMessage').style.display = 'block';
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            }
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById('checkoutModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('checkoutModal')) {
+                closeModal();
+            }
+        });
+        
+        // Auto-update checkout status every 3 seconds via AJAX
+        async function updateCheckoutStatus() {
+            try {
+                const response = await fetch('{% url "user_dashboard" %}');
+                const html = await response.text();
+                
+                // Parse the HTML to extract updated sections
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update available devices
+                const newAvailableDiv = doc.querySelector('[data-section="available-devices"]');
+                const currentAvailableDiv = document.querySelector('[data-section="available-devices"]');
+                if (newAvailableDiv && currentAvailableDiv) {
+                    currentAvailableDiv.innerHTML = newAvailableDiv.innerHTML;
+                }
+                
+                // Update checkout requests
+                const newCheckoutsDiv = doc.querySelector('[data-section="checkout-requests"]');
+                const currentCheckoutsDiv = document.querySelector('[data-section="checkout-requests"]');
+                if (newCheckoutsDiv && currentCheckoutsDiv) {
+                    currentCheckoutsDiv.innerHTML = newCheckoutsDiv.innerHTML;
+                }
+            } catch (error) {
+                console.error('Error updating checkout status:', error);
+            }
+        }
+        
+        // Poll for updates every 3 seconds
+        setInterval(updateCheckoutStatus, 3000);
+    </script>
+</body>
+</html>
