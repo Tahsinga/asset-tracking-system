@@ -1,5 +1,5 @@
 import os
-os.environ.setdefault('DJANGO_SETTINGS_MODULE','settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE','webapp.settings')
 import django
 django.setup()
 
