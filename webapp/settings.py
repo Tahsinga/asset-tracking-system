@@ -23,9 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--u^cmz#61v^xipmbokt@1)m5(j0r&c5^)guvw1&$kpf^6sgy1w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['asset-tracking-system-psvg.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
