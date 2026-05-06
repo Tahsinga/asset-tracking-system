@@ -16,15 +16,14 @@ users_data = [
     ('guard1','password','GATE_GUARD'),
 ]
 
-for username,password,role in users_data:
+for username, password, role in users_data:
     user, created = User.objects.get_or_create(username=username)
-    if created:
-        user.set_password(password)
-        if role=='ADMIN':
-            user.is_staff=True
-        user.save()
+    user.set_password(password)  # Always set password
+    if role == 'ADMIN':
+        user.is_staff = True
+    user.save()
     profile, _ = UserProfile.objects.get_or_create(user=user)
-    profile.role=role
+    profile.role = role
     profile.save()
     print(f'Set {username} role {role}')
 
