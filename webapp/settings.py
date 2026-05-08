@@ -83,10 +83,15 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 import dj_database_url
 
-if os.environ.get('DATABASE_URL'):
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600)
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
+elif os.environ.get('RENDER'):
+    raise RuntimeError(
+        'DATABASE_URL is required in Render deployment. Attach a Render PostgreSQL database or set DATABASE_URL.'
+    )
 else:
     DATABASES = {
         'default': {
