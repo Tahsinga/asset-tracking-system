@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+set -e
+
+echo "Installing dependencies..."
 pip install -r requirements.txt
-python manage.py migrate
-python create_demo_users.py
-python create_demo_data.py
+
+echo "Build complete! Migrations and demo users will be created at startup."

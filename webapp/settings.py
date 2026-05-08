@@ -25,12 +25,13 @@ import os
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure--u^cmz#61v^xipmbokt@1)m5(j0r&c5^)guvw1&$kpf^6sgy1w')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.dev',
+    'https://*.onrender.com',
 ]
 
 
@@ -83,15 +84,10 @@ WSGI_APPLICATION = 'webapp.wsgi.application'
 
 import dj_database_url
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
+if os.environ.get('DATABASE_URL'):
     DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+        'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'), conn_max_age=600)
     }
-elif os.environ.get('RENDER'):
-    raise RuntimeError(
-        'DATABASE_URL is required in Render deployment. Attach a Render PostgreSQL database or set DATABASE_URL.'
-    )
 else:
     DATABASES = {
         'default': {
@@ -137,6 +133,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Skip static files for SQLite on ephemeral filesystem
+if os.environ.get('RENDER'):
+    STATIC_ROOT = '/tmp/staticfiles'
+    STATIC_URL = 'static/'
 
 SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

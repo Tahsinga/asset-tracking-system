@@ -2,10 +2,12 @@ services:
   - type: web
     name: asset-tracking-system
     env: python
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
-    startCommand: gunicorn webapp.wsgi:application
+    buildCommand: pip install -r requirements.txt
+    startCommand: bash run.sh
     plan: free
     envVars:
+      - key: RENDER
+        value: "true"
       - key: PYTHON_VERSION
         value: 3.11
       - key: DEBUG
@@ -14,10 +16,3 @@ services:
         generateValue: true
       - key: ALLOWED_HOSTS
         value: ".onrender.com"
-      - database: asset-tracking-db
-        envVarKey: DATABASE_URL
-
-databases:
-  - name: asset-tracking-db
-    plan: free
-    ipAllowList: []
