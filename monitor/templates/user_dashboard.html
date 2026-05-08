@@ -374,7 +374,7 @@
                             <h3 style="color: #fde047; font-size: 14px; margin-bottom: 10px;">⏳ Pending Approval</h3>
                             {% for checkout in pending_checkouts %}
                             <div class="checkout-item" style="background: rgba(250,204,21,.08); border-left-color: var(--warn);">
-                                <strong>{{ checkout.registered_device.device_name }}</strong>
+                                <strong>{% if checkout.registered_device %}{{ checkout.registered_device.device_name }}{% else %}{{ checkout.serial_number }}{% endif %}</strong>
                                 <small>Serial: {{ checkout.serial_number }}</small>
                                 <small>Purpose: {{ checkout.purpose }}</small>
                                 <br>
@@ -391,7 +391,7 @@
                             <h3 style="color: #4ade80; font-size: 14px; margin-bottom: 10px;">✓ Confirmed Checkout</h3>
                             {% for checkout in approved_checkouts %}
                             <div class="checkout-item" style="background: rgba(34,197,94,.08); border-left-color: var(--accent);">
-                                <strong>{{ checkout.registered_device.device_name }}</strong>
+                                <strong>{% if checkout.registered_device %}{{ checkout.registered_device.device_name }}{% else %}{{ checkout.serial_number }}{% endif %}</strong>
                                 <small>Serial: {{ checkout.serial_number }}</small>
                                 <small>Purpose: {{ checkout.purpose }}</small>
                                 <br>

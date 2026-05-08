@@ -408,7 +408,7 @@
                         {% for checkout in pending_checkouts %}
                         <div class="checkout-item pending" id="checkout-{{ checkout.id }}">
                             <div class="checkout-info">
-                                <strong>{{ checkout.registered_device.device_name|default:checkout.serial_number }}</strong>
+                                <strong>{% if checkout.registered_device %}{{ checkout.registered_device.device_name }}{% else %}{{ checkout.serial_number }}{% endif %}</strong>
                                 <small><strong>Serial:</strong> {{ checkout.serial_number }}</small>
                                 <small><strong>User:</strong> {{ checkout.user_name }}</small>
                                 <small><strong>Department:</strong> {{ checkout.user_department|default:"N/A" }}</small>
@@ -444,7 +444,7 @@
                         {% for checkout in approved_checkouts %}
                         <div class="checkout-item approved">
                             <div class="checkout-info">
-                                <strong>{{ checkout.registered_device.device_name|default:checkout.serial_number }}</strong>
+                                <strong>{% if checkout.registered_device %}{{ checkout.registered_device.device_name }}{% else %}{{ checkout.serial_number }}{% endif %}</strong>
                                 <small><strong>Serial:</strong> {{ checkout.serial_number }}</small>
                                 <small><strong>User:</strong> {{ checkout.user_name }}</small>
                                 <small><strong>Department:</strong> {{ checkout.user_department|default:"N/A" }}</small>
