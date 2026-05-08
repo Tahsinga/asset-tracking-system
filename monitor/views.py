@@ -14,6 +14,146 @@ from functools import wraps
 # Timeout in seconds to consider ESP offline (reduced from 60s to 10s for quicker detection)
 ESP_OFFLINE_TIMEOUT_SECONDS = 10
 
+# Helper to sanitize text fields before saving to the database
+def _sanitize_field(value, max_length):
+    if value is None:
+        return ''
+    try:
+        text = str(value)
+    except Exception:
+        text = ''
+    return text[:max_length]
+
+def _create_device_log_from_json(data):
+    device_id = _sanitize_field(data.get('device_id', 'unknown'), 100)
+    notes = _sanitize_field(data.get('notes', 'Device reported at gate'), 2000)
+    owner_name = _sanitize_field(data.get('owner_name', ''), 120)
+    owner_contact = _sanitize_field(data.get('owner_contact', ''), 120)
+    serial_number = _sanitize_field(data.get('serial_number', ''), 120)
+    created_date = data.get('created_date', '')
+
+    kwargs = {
+        'device_id': device_id,
+        'notes': notes,
+        'owner_name': owner_name,
+        'owner_contact': owner_contact,
+        'serial_number': serial_number,
+    }
+    if created_date:
+        try:
+            from datetime import datetime
+            kwargs['created_date'] = datetime.strptime(created_date, '%Y-%m-%d').date()
+        except Exception:
+            kwargs['created_date'] = None
+
+    DeviceLog.objects.create(**kwargs)
+    return JsonResponse({'status': 'success'})
+
+
+def _handle_login_request(request, data, use_json=False, next_url=None):
+    username = _sanitize_field(data.get('username', ''), 150)
+    password = _sanitize_field(data.get('password', ''), 128)
+    selected_role = _sanitize_field(data.get('role', ''), 20)
+
+    if not username or not password or not selected_role:
+        message = 'Username, password, and role are required'
+        if use_json:
+            return JsonResponse({'status': 'error', 'message': message}, status=400)
+        return render(request, 'login.html', {
+            'error': message,
+            'selected_role': selected_role,
+            'next': next_url,
+        })
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        message = 'Invalid username or password'
+        if use_json:
+            return JsonResponse({'status': 'error', 'message': message}, status=401)
+        return render(request, 'login.html', {
+            'error': message,
+            'selected_role': selected_role,
+            'next': next_url,
+        })
+
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        profile = None
+
+    if selected_role == 'ADMIN':
+        if not (user.is_staff or user.is_superuser or (profile and profile.role == 'ADMIN')):
+            message = 'Your account is not assigned to the Admin role'
+            if use_json:
+                return JsonResponse({'status': 'error', 'message': message}, status=403)
+            return render(request, 'login.html', {
+                'error': message,
+                'selected_role': selected_role,
+                'next': next_url,
+            })
+    elif selected_role == 'GATE_GUARD':
+        if not (profile and profile.role == 'GATE_GUARD'):
+            message = 'Your account is not assigned to the Gate Guard role'
+            if use_json:
+                return JsonResponse({'status': 'error', 'message': message}, status=403)
+            return render(request, 'login.html', {
+                'error': message,
+                'selected_role': selected_role,
+                'next': next_url,
+            })
+    else:
+        if profile and profile.role != 'USER':
+            message = 'Your account is not assigned to the User role'
+            if use_json:
+                return JsonResponse({'status': 'error', 'message': message}, status=403)
+            return render(request, 'login.html', {
+                'error': message,
+                'selected_role': selected_role,
+                'next': next_url,
+            })
+        if profile is None:
+            UserProfile.objects.create(user=user, role='USER')
+
+    login(request, user)
+    if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
+        redirect_target = next_url
+    else:
+        redirect_target = 'dashboard'
+
+    if use_json:
+        return JsonResponse({'status': 'success', 'redirect': redirect_target})
+    return redirect(redirect_target)
+
+
+@csrf_exempt
+def home(request):
+    """Root route: redirect users to login/dashboard and accept JSON device posts."""
+    if request.method == 'POST':
+        content_type = request.META.get('CONTENT_TYPE', '')
+        if content_type.startswith('application/json'):
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+
+            if data.get('username') or data.get('password'):
+                return JsonResponse({'status': 'error', 'message': 'Use /login/ to authenticate'}, status=400)
+            try:
+                return _create_device_log_from_json(data)
+            except Exception as e:
+                print(f"Error creating DeviceLog from root POST: {e}")
+                return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+        if request.POST.get('username') or request.POST.get('password'):
+            next_url = request.POST.get('next')
+            return _handle_login_request(request, request.POST, use_json=False, next_url=next_url)
+
+        return JsonResponse({'status': 'method not allowed'}, status=405)
+
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return redirect('login')
+
 # Decorator to check user role
 def role_required(required_role):
     def decorator(view_func):
@@ -28,14 +168,17 @@ def role_required(required_role):
                 profile = request.user.profile
                 if profile.role == required_role:
                     return view_func(request, *args, **kwargs)
-                else:
-                    return redirect('dashboard')
+                return redirect('dashboard')
             except UserProfile.DoesNotExist:
-                return redirect('login')
+                if request.user.is_staff or request.user.is_superuser:
+                    return view_func(request, *args, **kwargs)
+                if required_role == 'USER':
+                    UserProfile.objects.create(user=request.user, role='USER')
+                    return view_func(request, *args, **kwargs)
+                return redirect('dashboard')
         return wrapper
     return decorator
 
-# Authentication Views
 @ensure_csrf_cookie
 def login_view(request):
     next_url = request.GET.get('next') or request.POST.get('next')
@@ -43,20 +186,18 @@ def login_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
-            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
-                return redirect(next_url)
-            return redirect('dashboard')
-        return render(request, 'login.html', {
-            'error': 'Invalid username or password',
-            'next': next_url
-        })
+        content_type = request.META.get('CONTENT_TYPE', '')
+        if content_type.startswith('application/json'):
+            try:
+                data = json.loads(request.body)
+            except json.JSONDecodeError as e:
+                print(f"Error processing login JSON: {e}")
+                return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+            return _handle_login_request(request, data, use_json=True, next_url=next_url)
 
-    return render(request, 'login.html', {'next': next_url})
+        return _handle_login_request(request, request.POST, use_json=False, next_url=next_url)
+
+    return render(request, 'login.html', {'next': next_url, 'selected_role': ''})
 
 def logout_view(request):
     logout(request)

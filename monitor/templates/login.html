@@ -78,7 +78,8 @@
             font-size: 14px;
         }
         
-        .form-group input {
+        .form-group input,
+        .form-group select {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -89,7 +90,8 @@
             transition: all 0.3s ease;
         }
         
-        .form-group input:focus {
+        .form-group input:focus,
+        .form-group select:focus {
             outline: none;
             border-color: var(--accent);
             background: rgba(34,197,94,.1);
@@ -175,7 +177,7 @@
             <p><strong>Guard:</strong> guard1 / password</p>
         </div> -->
         
-        <form method="POST">
+        <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             {% if next %}
                 <input type="hidden" name="next" value="{{ next }}">
@@ -189,6 +191,16 @@
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">Select Role</label>
+                <select id="role" name="role" required>
+                    <option value="" disabled {% if not selected_role %}selected{% endif %}>Choose role</option>
+                    <option value="USER" {% if selected_role == 'USER' %}selected{% endif %}>User</option>
+                    <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Admin</option>
+                    <option value="GATE_GUARD" {% if selected_role == 'GATE_GUARD' %}selected{% endif %}>Gate Guard</option>
+                </select>
             </div>
             
             <button type="submit" class="login-button">Login</button>
