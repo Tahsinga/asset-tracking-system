@@ -246,6 +246,8 @@
 </head>
 <body>
 
+  <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
   <!--  SIDEBAR  -->
   <aside>
     <div class="brand">
@@ -367,6 +369,25 @@
     let previousOnline = false;
     let audioContext;
 
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    function getCsrfToken() {
+      return getCookie('csrftoken') || document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+    }
+
     function initAudio() {
       if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
       if (audioContext.state === 'suspended') audioContext.resume();
@@ -402,7 +423,11 @@
       
       fetch('/checkout/', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken()
+        },
         body: JSON.stringify({
           device_id: deviceId,
           user_name: userName,
@@ -435,7 +460,11 @@
 
       fetch('/update_device/', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken()
+        },
         body: JSON.stringify({
           device_id: device.id,
           owner_name: newName,
@@ -459,7 +488,11 @@
       
       fetch('/checkin/', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken()
+        },
         body: JSON.stringify({checkout_id: checkoutId})
       }).then(r => r.json()).then(data => {
         if (data.status === 'success') {

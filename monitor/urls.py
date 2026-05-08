@@ -24,6 +24,7 @@ urlpatterns = [
     
     # Existing routes
     path('monitor/', views.monitor, name='monitor'),
+    path('favicon.ico', views.favicon, name='favicon'),
     path('logs/', views.get_logs, name='get_logs'),
     path('status/', views.get_status, name='get_status'),
     path('devices/', views.get_devices, name='get_devices'),

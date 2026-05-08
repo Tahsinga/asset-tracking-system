@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from datetime import timedelta
 from .models import DeviceLog, ESPStatus, DeviceCheckout, UserProfile, RegisteredDevice
 from django.contrib.auth import authenticate, login, logout
@@ -35,17 +36,27 @@ def role_required(required_role):
     return decorator
 
 # Authentication Views
+@ensure_csrf_cookie
 def login_view(request):
+    next_url = request.GET.get('next') or request.POST.get('next')
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
+            if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts=None):
+                return redirect(next_url)
             return redirect('dashboard')
-        else:
-            return render(request, 'login.html', {'error': 'Invalid username or password'})
-    return render(request, 'login.html')
+        return render(request, 'login.html', {
+            'error': 'Invalid username or password',
+            'next': next_url
+        })
+
+    return render(request, 'login.html', {'next': next_url})
 
 def logout_view(request):
     logout(request)
@@ -332,11 +343,15 @@ def guard_dashboard(request):
 
 
 @login_required(login_url='login')
+@ensure_csrf_cookie
 def monitor(request):
     logs = DeviceLog.objects.order_by('-timestamp')[:20]  # Last 20 logs
     status = ESPStatus.objects.first()  # Assuming one ESP
     is_online = status and (timezone.now() - status.last_update).total_seconds() < ESP_OFFLINE_TIMEOUT_SECONDS if status else False
     return render(request, 'monitor.html', {'logs': logs, 'status': status, 'is_online': is_online})
+
+def favicon(request):
+    return HttpResponse(status=204)
 
 @login_required(login_url='login')
 def checkout_history(request):
