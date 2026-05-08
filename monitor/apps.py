@@ -1,4 +1,5 @@
 import os
+import sys
 
 from django.apps import AppConfig
 
@@ -10,7 +11,11 @@ class MonitorConfig(AppConfig):
     def ready(self):
         # Create demo users on startup if the database is ready.
         # This is idempotent and avoids broken login when Render deployment does not run the release step.
-        if os.environ.get('RUN_MAIN') not in ('true', '1') and os.environ.get('WERKZEUG_RUN_MAIN') not in ('true', '1'):
+        if len(sys.argv) > 1 and sys.argv[1] in [
+            'check', 'migrate', 'makemigrations', 'collectstatic', 'shell',
+            'createsuperuser', 'test', 'loaddata', 'dumpdata', 'flush',
+            'compilemessages', 'sqlmigrate', 'inspectdb',
+        ]:
             return
 
         try:
