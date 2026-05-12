@@ -838,3 +838,38 @@ def update_device(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     return JsonResponse({'status': 'method not allowed'}, status=405)
+
+@csrf_exempt
+def check_device_status(request):
+    """Check if a device is registered and currently checked out"""
+    if request.method == 'GET':
+        device_id = request.GET.get('device_id')
+        if not device_id:
+            return JsonResponse({'status': 'error', 'message': 'device_id required'}, status=400)
+        
+        # Check if device is registered
+        try:
+            registered_device = RegisteredDevice.objects.get(serial_number=device_id, is_active=True)
+        except RegisteredDevice.DoesNotExist:
+            return JsonResponse({
+                'status': 'success',
+                'registered': False,
+                'checked_out': False,
+                'message': 'Device not registered'
+            })
+        
+        # Check if device is currently checked out
+        active_checkout = DeviceCheckout.objects.filter(
+            registered_device=registered_device,
+            status='CHECKED_OUT',
+            is_active=True
+        ).exists()
+        
+        return JsonResponse({
+            'status': 'success',
+            'registered': True,
+            'checked_out': active_checkout,
+            'message': 'Device registered and checked out' if active_checkout else 'Device registered but not checked out'
+        })
+    
+    return JsonResponse({'status': 'method not allowed'}, status=405)

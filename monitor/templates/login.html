@@ -169,14 +169,7 @@
             {{ error }}
         </div>
         {% endif %}
-        
-        <div class="role-info">
-            <strong>Demo Accounts:</strong>
-            <p><strong>User:</strong> user1 / password</p>
-            <p><strong>Admin:</strong> admin1 / password</p>
-            <p><strong>Guard:</strong> guard1 / password</p>
-        </div>
-        
+  
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             {% if next %}
@@ -195,8 +188,8 @@
             
             <div class="form-group">
                 <label for="role">Select Role</label>
-                <select id="role" name="role" required>
-                    <option value="" disabled {% if not selected_role %}selected{% endif %}>Choose role</option>
+                <select id="role" name="role" style="color: #020617;" required>
+                    <option style="color: #ffffff;" value="" disabled {% if not selected_role %}selected{% endif %}>Choose role</option>
                     <option value="USER" {% if selected_role == 'USER' %}selected{% endif %}>User</option>
                     <option value="ADMIN" {% if selected_role == 'ADMIN' %}selected{% endif %}>Admin</option>
                     <option value="GATE_GUARD" {% if selected_role == 'GATE_GUARD' %}selected{% endif %}>Gate Guard</option>

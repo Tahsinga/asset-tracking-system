@@ -32,19 +32,31 @@
         .header-actions {
             display: flex;
             gap: 15px;
+            align-items: center;
         }
         
         .header-actions a {
             color: white;
             text-decoration: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 18px;
+            border-radius: 8px;
             background: rgba(255, 255, 255, 0.2);
-            transition: background 0.3s;
+            transition: background 0.3s, transform 0.2s;
+            font-weight: 600;
+        }
+        
+        .header-actions a.logout-btn {
+            background: #ff6b6b;
+            color: white;
         }
         
         .header-actions a:hover {
             background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        .header-actions a.logout-btn:hover {
+            background: #ff4d4d;
         }
         
         .container {
@@ -270,7 +282,7 @@
         <h1>Gate Guard Dashboard</h1>
         <div class="header-actions">
             <span>Welcome, {{ user.get_full_name|default:user.username }}!</span>
-            <a href="{% url 'logout' %}">Logout</a>
+            <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
         </div>
     </header>
     

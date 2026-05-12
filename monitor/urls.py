@@ -32,6 +32,7 @@ urlpatterns = [
     path('update_status/', views.update_status, name='update_status'),
     path('receive/', views.receive_data, name='receive_data'),
     path('update_device/', views.update_device, name='update_device'),
+    path('check_device_status/', views.check_device_status, name='check_device_status'),
     path('checkout/', views.checkout_device, name='checkout_device'),
     path('checkin/', views.checkin_device, name='checkin_device'),
     path('checkout-history/', views.checkout_history, name='checkout_history'),
