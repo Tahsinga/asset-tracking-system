@@ -497,9 +497,13 @@ def finalize_checkout(request):
 @login_required(login_url='login')
 @role_required('GATE_GUARD')
 def guard_dashboard(request):
-    """Redirect gate guard to main monitor interface."""
-    # reuse existing monitor view and logic
-    return redirect('monitor')
+    """Render the dedicated guard dashboard."""
+    checked_out_devices = DeviceCheckout.objects.filter(status='CHECKED_OUT').order_by('-checkout_time')
+    recent_logs = DeviceLog.objects.order_by('-timestamp')[:20]
+    return render(request, 'guard_dashboard.html', {
+        'checked_out_devices': checked_out_devices,
+        'recent_logs': recent_logs,
+    })
 
 
 
@@ -844,12 +848,14 @@ def check_device_status(request):
     """Check if a device is registered and currently checked out"""
     if request.method == 'GET':
         device_id = request.GET.get('device_id')
-        if not device_id:
-            return JsonResponse({'status': 'error', 'message': 'device_id required'}, status=400)
+        serial_number = request.GET.get('serial_number')
+        lookup_id = serial_number or device_id
+        if not lookup_id:
+            return JsonResponse({'status': 'error', 'message': 'device_id or serial_number required'}, status=400)
         
-        # Check if device is registered
+        # Check if device is registered by serial number
         try:
-            registered_device = RegisteredDevice.objects.get(serial_number=device_id, is_active=True)
+            registered_device = RegisteredDevice.objects.get(serial_number=lookup_id, is_active=True)
         except RegisteredDevice.DoesNotExist:
             return JsonResponse({
                 'status': 'success',

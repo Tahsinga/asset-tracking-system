@@ -61,14 +61,20 @@ void sendStatus() {
   }
 }
 
-bool checkDeviceStatus(String deviceID) {
+bool checkDeviceStatus(String deviceID, String serialNumber = "") {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("❌ No WiFi, cannot check device status");
     return false;
   }
 
   HTTPClient http;
-  String url = String("https://") + server_host + "/check_device_status/?device_id=" + deviceID;
+  String url = String("https://") + server_host + "/check_device_status/";
+  if (serialNumber.length() > 0) {
+    url += "?serial_number=" + serialNumber;
+  } else {
+    url += "?device_id=" + deviceID;
+  }
+  Serial.println("🔎 Querying server: " + url);
   http.begin(secureClient, url);
   int httpResponseCode = http.GET();
 
@@ -76,13 +82,13 @@ bool checkDeviceStatus(String deviceID) {
     String payload = http.getString();
     Serial.println("Device status response: " + payload);
     
-    // Simple JSON parsing for registered and checked_out
-    if (payload.indexOf("\"registered\":true") != -1 && payload.indexOf("\"checked_out\":true") != -1) {
-      Serial.println("✅ Device is registered and checked out");
+    bool checkedOut = payload.indexOf("\"checked_out\":true") != -1 || payload.indexOf("\"checked_out\": 1") != -1;
+    if (checkedOut) {
+      Serial.println("✅ Device is checked out");
       http.end();
       return true;
     } else {
-      Serial.println("ℹ️ Device is not registered or not checked out");
+      Serial.println("ℹ️ Device is not checked out");
     }
   } else {
     Serial.println("❌ Failed to check device status: " + String(httpResponseCode));
@@ -101,9 +107,11 @@ void controlGate(bool isRegisteredAndCheckedOut) {
     // Move servo back to 0 degrees
     Serial.println("🚪 Gate closing (servo to 0°)");
     gateServo.write(0);
+    delay(600);  // Allow return motion to finish
+    Serial.println("✅ Servo returned to 0°");
   } else {
     // Just set D4 high
-    Serial.println("⚠️ Unregistered device detected - D4 set HIGH");
+    Serial.println("⚠️ Unregistered or non-allowed device detected - D4 set HIGH");
     digitalWrite(CONTROL_PIN, HIGH);
     delay(1000);  // Keep it high for 1 second
     digitalWrite(CONTROL_PIN, LOW);
@@ -142,20 +150,46 @@ void testServo() {
 }
 
 void handleRoot() {
-  // If a device hits the AP with ?id=..., save the ID and forward immediately
+  // If a device hits the AP with a device identifier, save the ID and forward immediately
+  String deviceID = "";
   if (server.hasArg("id")) {
-    String deviceID = server.arg("id");
+    deviceID = server.arg("id");
+  } else if (server.hasArg("device_id")) {
+    deviceID = server.arg("device_id");
+  }
+
+  String serialValue = "";
+  if (server.hasArg("serial_number")) {
+    serialValue = server.arg("serial_number");
+  } else if (server.hasArg("serial")) {
+    serialValue = server.arg("serial");
+  }
+
+  if (deviceID.length() == 0 && serialValue.length() > 0) {
+    deviceID = serialValue;
+  }
+
+  if (deviceID.length() > 0) {
     lastDeviceId = deviceID;
     String owner = server.hasArg("owner") ? server.arg("owner") : "";
     String created = server.hasArg("created") ? server.arg("created") : "";
     String phone = server.hasArg("phone") ? server.arg("phone") : "";
-    String serial = server.hasArg("serial") ? server.arg("serial") : "";
+    String serial = serialValue.length() ? serialValue : (server.hasArg("serial") ? server.arg("serial") : "");
 
     Serial.println("📡 Device reported -> " + deviceID + " owner:" + owner + " phone:" + phone + " serial:" + serial);
     Serial.println("🎯 ASSET DEVICE DETECTED AT GATE - Proximity confirmed!");
 
-    // Check device status and control gate
-    bool isRegisteredAndCheckedOut = checkDeviceStatus(deviceID);
+    // Only move the servo for the checked-out asset with ID AA12B3423HIT.
+    bool isAllowedDevice = (deviceID == "AA12B3423HIT");
+    bool isRegisteredAndCheckedOut = false;
+    if (isAllowedDevice) {
+      if (serialValue.length() > 0) {
+        Serial.println("ℹ️ Checking checkout status using serial: " + serialValue);
+      }
+      isRegisteredAndCheckedOut = checkDeviceStatus(deviceID, serialValue);
+    } else {
+      Serial.println("ℹ️ Device " + deviceID + " is not AA12B3423HIT; servo will not move.");
+    }
     controlGate(isRegisteredAndCheckedOut);
 
     // Forward to Django server (structured JSON)
@@ -264,8 +298,9 @@ void setup() {
   // Initialize servo
   gateServo.setPeriodHertz(50);
   gateServo.attach(SERVO_PIN, 500, 2400);
-  gateServo.write(90);  // Start at 0 degrees
-  Serial.println("🔧 Servo initialized on pin 33");
+  gateServo.write(0);  // Start at 0 degrees
+  delay(500);          // Give the servo time to reach the start position
+  Serial.println("🔧 Servo initialized on pin 33 and moved to 0°");
 
   // Initialize control pin
   pinMode(CONTROL_PIN, OUTPUT);
