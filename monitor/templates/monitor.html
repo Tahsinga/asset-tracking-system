@@ -100,6 +100,21 @@
     }
     .action-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 
+    .logout-btn {
+      width: auto;
+      padding: 10px 18px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-color: transparent;
+      color: white;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .logout-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(239,68,68,.35);
+      background: linear-gradient(135deg, #f87171, #ef4444);
+    }
+
 
     /*  MAIN CONTENT  */
     main {
@@ -298,6 +313,9 @@
       <div>
         <div class="title">Live Device Checkins</div>
         <div class="subtitle">Realtime reports from assets at the gate</div>
+      </div>
+      <div>
+        <a href="{% url 'logout' %}" class="action-btn logout-btn">Logout</a>
       </div>
     </div>
 
